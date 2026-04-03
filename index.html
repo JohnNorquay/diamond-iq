@@ -31,6 +31,9 @@
       <div id="home-team-name" style="font-size: var(--font-size-md); color: var(--text-muted); margin-bottom: var(--space-lg); text-align: center;"></div>
 
       <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px;">
+        <button id="btn-resume" class="btn btn-primary btn-large hidden" onclick="Game.resumeGame()" style="background: var(--correct);">
+          Resume Game
+        </button>
         <button class="btn btn-primary btn-large" onclick="Game.transition('POSITION_SELECT')">
           PLAY BALL!
         </button>
@@ -443,7 +446,10 @@
     <!-- Diamond -->
     <div class="diamond-wrapper">
       <div class="diamond-container" id="diamond-container"></div>
-      <button class="quit-btn" onclick="Game.goHome()">Quit</button>
+      <div class="diamond-btn-row">
+        <button class="quit-btn" onclick="confirmQuit()">Quit</button>
+        <button class="pause-btn" onclick="Game.pauseGame()">Pause</button>
+      </div>
     </div>
   </div>
 
@@ -808,6 +814,16 @@
 
       valueEl.textContent = team.team_code;
       resultEl.classList.remove('hidden');
+    }
+
+    // ==========================================
+    // QUIT / PAUSE
+    // ==========================================
+
+    function confirmQuit() {
+      if (confirm('Quit this game? Your progress will be lost.')) {
+        Game.goHome();
+      }
     }
 
     // ==========================================

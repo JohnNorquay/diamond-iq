@@ -14,10 +14,22 @@
   -webkit-user-select: none;
 }
 
-.quit-btn {
+.diamond-btn-row {
   position: absolute;
   bottom: 8px;
   left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.diamond-btn-row > button {
+  pointer-events: auto;
+}
+
+.quit-btn, .pause-btn {
   background: rgba(15, 23, 42, 0.7);
   color: var(--text-muted);
   border: 1px solid var(--text-muted);
@@ -27,11 +39,15 @@
   font-weight: 600;
   font-family: var(--font);
   cursor: pointer;
-  z-index: 10;
 }
 
-.quit-btn:active {
+.quit-btn:active, .pause-btn:active {
   transform: scale(0.95);
+}
+
+.pause-btn {
+  border-color: var(--team-accent);
+  color: var(--team-accent);
 }
 
 .diamond-field {

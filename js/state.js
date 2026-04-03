@@ -93,6 +93,16 @@ const Game = {
       notLoggedIn.classList.add('hidden');
       document.getElementById('home-player-name').textContent = `Welcome back, ${this.session.playerName}!`;
       document.getElementById('home-team-name').textContent = this.session.teamName || '';
+
+      // Show resume button if there's a paused game
+      const resumeBtn = document.getElementById('btn-resume');
+      if (resumeBtn) {
+        if (this.hasPausedGame()) {
+          resumeBtn.classList.remove('hidden');
+        } else {
+          resumeBtn.classList.add('hidden');
+        }
+      }
     } else {
       loggedIn.classList.add('hidden');
       notLoggedIn.classList.remove('hidden');
@@ -1146,6 +1156,89 @@ const Game = {
 
   goHome() {
     this.stopTimer();
+    this.resetGame();
     this.transition('HOME');
+  },
+
+  pauseGame() {
+    this.stopTimer();
+    // Save game state to localStorage so it can be resumed
+    const saveState = {
+      position: this.session.position,
+      positionRotation: this.session.positionRotation,
+      inningNumber: this.session.inningNumber,
+      outs: this.session.outs,
+      runners: this.session.runners,
+      runsScored: this.session.runsScored,
+      playsCompleted: this.session.playsCompleted,
+      streak: this.session.streak,
+      bestStreak: this.session.bestStreak,
+      totalPoints: this.session.totalPoints,
+      correctCount: this.session.correctCount,
+      totalAnswered: this.session.totalAnswered,
+      gamePoints: this.session.gamePoints,
+      gameCorrect: this.session.gameCorrect,
+      gameAnswered: this.session.gameAnswered,
+      gameBestStreak: this.session.gameBestStreak,
+      gameRunsAllowed: this.session.gameRunsAllowed,
+      inningResults: this.session.inningResults,
+      speedLevel: this.session.speedLevel,
+      playHistory: this.session.playHistory,
+      recentHitZones: this.session.recentHitZones,
+    };
+    localStorage.setItem('diq_paused_game', JSON.stringify(saveState));
+    this.transition('HOME');
+  },
+
+  resumeGame() {
+    const saved = localStorage.getItem('diq_paused_game');
+    if (!saved) return false;
+    try {
+      const s = JSON.parse(saved);
+      Object.assign(this.session, s);
+      // Restore speed level
+      if (s.speedLevel) {
+        setSpeedLevel(s.speedLevel === 'allstar' ? 'allstar' : 'rookie');
+      }
+      localStorage.removeItem('diq_paused_game');
+      this.session.scenarios = []; // Will reload on next play
+      this.transition('LOADING');
+      return true;
+    } catch (e) {
+      localStorage.removeItem('diq_paused_game');
+      return false;
+    }
+  },
+
+  hasPausedGame() {
+    return !!localStorage.getItem('diq_paused_game');
+  },
+
+  resetGame() {
+    this.session.position = null;
+    this.session.positionRotation = null;
+    this.session.inningNumber = 1;
+    this.session.outs = 0;
+    this.session.runners = [];
+    this.session.runsScored = 0;
+    this.session.playsCompleted = 0;
+    this.session.streak = 0;
+    this.session.bestStreak = 0;
+    this.session.totalPoints = 0;
+    this.session.correctCount = 0;
+    this.session.totalAnswered = 0;
+    this.session.gamePoints = 0;
+    this.session.gameCorrect = 0;
+    this.session.gameAnswered = 0;
+    this.session.gameBestStreak = 0;
+    this.session.gameRunsAllowed = 0;
+    this.session.inningResults = [];
+    this.session.scenarios = [];
+    this.session.playHistory = [];
+    this.session.recentHitZones = [];
+    this.session.currentScenario = null;
+    this.session.currentAction = null;
+    this.session.isSolo = false;
+    localStorage.removeItem('diq_paused_game');
   }
 };
