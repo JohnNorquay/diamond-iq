@@ -25,30 +25,43 @@
       </p>
     </div>
 
-    <div id="home-player-name" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
-      Welcome to Diamond IQ!
+    <!-- Logged-in state (has team + player) -->
+    <div id="home-logged-in" class="hidden" style="display: flex; flex-direction: column; align-items: center;">
+      <div id="home-player-name" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-xs); text-align: center;"></div>
+      <div id="home-team-name" style="font-size: var(--font-size-md); color: var(--text-muted); margin-bottom: var(--space-lg); text-align: center;"></div>
+
+      <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px;">
+        <button class="btn btn-primary btn-large" onclick="Game.transition('POSITION_SELECT')">
+          PLAY BALL!
+        </button>
+        <button class="btn btn-secondary" onclick="showLeaderboard()">
+          Leaderboard
+        </button>
+        <button class="btn btn-secondary" onclick="showInstructions()">
+          How to Play
+        </button>
+        <button class="btn btn-secondary" style="font-size: var(--font-size-sm);" onclick="switchPlayer()">
+          Switch Player
+        </button>
+      </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px;">
-      <button id="btn-play" class="btn btn-primary btn-large hidden" onclick="Game.transition('POSITION_SELECT')">
-        PLAY BALL!
-      </button>
-
-      <button id="btn-select-player" class="btn btn-primary btn-large" onclick="Game.transition('PLAYER_SELECT')">
-        Pick Your Name
-      </button>
-
-      <button id="btn-switch-player" class="btn btn-secondary hidden" onclick="Game.transition('PLAYER_SELECT')">
-        Switch Player
-      </button>
-
-      <button id="btn-leaderboard" class="btn btn-secondary" onclick="showLeaderboard()">
-        Leaderboard
-      </button>
-
-      <button class="btn btn-secondary" onclick="showInstructions()">
-        How to Play
-      </button>
+    <!-- Not logged in state -->
+    <div id="home-not-logged-in" style="display: flex; flex-direction: column; align-items: center;">
+      <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px;">
+        <button class="btn btn-primary btn-large" onclick="Game.transition('TEAM_CODE')">
+          Join Your Team
+        </button>
+        <button class="btn btn-secondary" onclick="Game.transition('COACH_LOGIN')">
+          Coach / Create Team
+        </button>
+        <button class="btn btn-secondary" onclick="startSoloPractice()">
+          Practice Solo
+        </button>
+        <button class="btn btn-secondary" onclick="showInstructions()">
+          How to Play
+        </button>
+      </div>
     </div>
 
     <!-- Leaderboard section (hidden by default) -->
@@ -67,7 +80,7 @@
         <div class="instructions-step">
           <div class="step-number">1</div>
           <div class="step-content">
-            <strong>Pick your name</strong> from the roster, then tap <strong>PLAY BALL!</strong>
+            <strong>Join your team</strong> using the code from your coach, then <strong>pick your name</strong>.
           </div>
         </div>
 
@@ -158,22 +171,155 @@
         </button>
       </div>
     </div>
+  </div>
 
-    <div style="margin-top: var(--space-2xl); color: var(--text-muted); font-size: var(--font-size-sm); text-align: center;">
-      Janesville Jays 7U
+  <!-- TEAM CODE ENTRY SCREEN -->
+  <div id="screen-team-code" class="screen">
+    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-sm);">
+      Join Your Team
+    </h2>
+    <p class="text-muted" style="margin-bottom: var(--space-lg);">Enter the code from your coach</p>
+
+    <input type="text" id="team-code-input" class="code-input" maxlength="6" placeholder="TEAM CODE"
+      autocomplete="off" autocapitalize="characters" spellcheck="false">
+    <div id="team-code-error" class="input-error hidden"></div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px; margin-top: var(--space-lg);">
+      <button id="btn-join-team" class="btn btn-primary" onclick="joinTeamByCode()">
+        Find My Team
+      </button>
+      <button class="btn btn-secondary" onclick="Game.transition('HOME')">
+        Back
+      </button>
     </div>
   </div>
 
-  <!-- PLAYER SELECT SCREEN -->
+  <!-- PLAYER SELECT SCREEN (now team-scoped) -->
   <div id="screen-player-select" class="screen">
-    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
+    <h2 id="player-select-title" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-sm);">
       Who Are You?
     </h2>
+    <p id="player-select-team" class="text-muted" style="margin-bottom: var(--space-lg);"></p>
     <div id="player-list" style="display: flex; flex-direction: column; gap: var(--space-sm); width: 100%; max-width: 400px; overflow-y: auto; max-height: 70vh;">
     </div>
     <button class="btn btn-secondary" style="margin-top: var(--space-lg);" onclick="Game.transition('HOME')">
       Back
     </button>
+  </div>
+
+  <!-- SECRET WORD SCREEN (set or verify) -->
+  <div id="screen-secret-word" class="screen">
+    <h2 id="secret-word-title" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-sm);">
+      What's Your Secret Word?
+    </h2>
+    <p id="secret-word-desc" class="text-muted" style="margin-bottom: var(--space-lg); text-align: center; max-width: 300px;"></p>
+
+    <input type="text" id="secret-word-input" class="code-input" maxlength="20" placeholder="Secret Word"
+      autocomplete="off" autocapitalize="none" spellcheck="false">
+    <div id="secret-word-error" class="input-error hidden"></div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px; margin-top: var(--space-lg);">
+      <button id="btn-secret-word" class="btn btn-primary" onclick="submitSecretWord()">
+        Let's Go!
+      </button>
+      <button class="btn btn-secondary" onclick="Game.transition('PLAYER_SELECT')">
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- COACH LOGIN SCREEN -->
+  <div id="screen-coach-login" class="screen">
+    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
+      Coach Area
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 340px;">
+      <!-- Manage existing team -->
+      <div class="coach-section">
+        <h3 style="font-size: var(--font-size-md); font-weight: 700; margin-bottom: var(--space-sm);">Manage Your Team</h3>
+        <input type="text" id="coach-team-code" class="code-input" maxlength="6" placeholder="TEAM CODE"
+          autocomplete="off" autocapitalize="characters" spellcheck="false">
+        <input type="text" id="coach-pin-input" class="code-input" maxlength="4" placeholder="Coach PIN"
+          autocomplete="off" inputmode="numeric" style="margin-top: var(--space-sm);">
+        <div id="coach-login-error" class="input-error hidden"></div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-sm);" onclick="coachLogin()">
+          Sign In
+        </button>
+      </div>
+
+      <div style="text-align: center; color: var(--text-muted); font-weight: 700;">or</div>
+
+      <!-- Create new team -->
+      <button class="btn btn-secondary" style="width: 100%;" onclick="Game.transition('CREATE_TEAM')">
+        Create a New Team
+      </button>
+
+      <button class="btn btn-secondary" style="width: 100%;" onclick="Game.transition('HOME')">
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- CREATE TEAM SCREEN -->
+  <div id="screen-create-team" class="screen">
+    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
+      Create Your Team
+    </h2>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 340px;">
+      <div>
+        <label class="input-label">Team Name</label>
+        <input type="text" id="create-team-name" class="code-input" maxlength="40" placeholder="e.g. Janesville Jays"
+          autocomplete="off" spellcheck="false">
+      </div>
+      <div>
+        <label class="input-label">Age Group</label>
+        <input type="text" id="create-team-age" class="code-input" maxlength="10" placeholder="e.g. 7U, 10U, 12U"
+          autocomplete="off" value="7U">
+      </div>
+      <div>
+        <label class="input-label">Coach PIN (4 digits — you'll need this to manage your team)</label>
+        <input type="text" id="create-team-pin" class="code-input" maxlength="4" placeholder="4-digit PIN"
+          autocomplete="off" inputmode="numeric">
+      </div>
+      <div id="create-team-error" class="input-error hidden"></div>
+      <button class="btn btn-primary" style="width: 100%;" onclick="createTeam()">
+        Create Team
+      </button>
+      <button class="btn btn-secondary" style="width: 100%;" onclick="Game.transition('COACH_LOGIN')">
+        Back
+      </button>
+    </div>
+  </div>
+
+  <!-- COACH MANAGE TEAM SCREEN -->
+  <div id="screen-coach-manage" class="screen">
+    <h2 id="coach-manage-title" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-xs);">
+      Manage Team
+    </h2>
+    <div id="coach-team-code-display" class="team-code-display"></div>
+    <p class="text-muted" style="margin-bottom: var(--space-md); font-size: var(--font-size-sm);">Share this code with your players!</p>
+
+    <div style="width: 100%; max-width: 400px;">
+      <h3 style="font-size: var(--font-size-md); font-weight: 700; margin-bottom: var(--space-sm);">Roster</h3>
+      <div id="coach-roster" style="display: flex; flex-direction: column; gap: var(--space-xs); max-height: 40vh; overflow-y: auto;"></div>
+
+      <div style="display: flex; gap: var(--space-sm); margin-top: var(--space-md);">
+        <input type="text" id="add-player-name" class="code-input" maxlength="20" placeholder="Player name"
+          autocomplete="off" spellcheck="false" style="flex: 1;">
+        <button class="btn btn-primary" style="min-width: auto; padding: var(--space-sm) var(--space-md);" onclick="addPlayerToTeam()">
+          Add
+        </button>
+      </div>
+      <div id="add-player-error" class="input-error hidden"></div>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px; margin-top: var(--space-lg);">
+      <button class="btn btn-secondary" onclick="Game.transition('HOME')">
+        Done
+      </button>
+    </div>
   </div>
 
   <!-- POSITION SELECT SCREEN -->
@@ -316,11 +462,272 @@
       origSelectPosition(position);
     };
 
-    // Leaderboard
+    // ==========================================
+    // TEAM CODE ENTRY
+    // ==========================================
+
+    async function joinTeamByCode() {
+      const input = document.getElementById('team-code-input');
+      const errorEl = document.getElementById('team-code-error');
+      const code = input.value.trim().toUpperCase();
+
+      if (!code || code.length < 3) {
+        errorEl.textContent = 'Enter your team code!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+      const { data: team, error } = await sb
+        .from('diq_teams').select('*').eq('team_code', code).single();
+
+      if (error || !team) {
+        errorEl.textContent = "Can't find that team code. Check with your coach!";
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      Game.session.teamId = team.id;
+      Game.session.teamName = team.name;
+      Game.session.teamCode = team.team_code;
+      Game.transition('PLAYER_SELECT');
+    }
+
+    // Enter key on team code input
+    document.addEventListener('DOMContentLoaded', () => {
+      document.getElementById('team-code-input')?.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') joinTeamByCode();
+      });
+      document.getElementById('secret-word-input')?.addEventListener('keyup', (e) => {
+        if (e.key === 'Enter') submitSecretWord();
+      });
+    });
+
+    // ==========================================
+    // SECRET WORD (set or verify)
+    // ==========================================
+
+    async function submitSecretWord() {
+      const input = document.getElementById('secret-word-input');
+      const errorEl = document.getElementById('secret-word-error');
+      const word = input.value.trim().toLowerCase();
+      const player = Game._pendingPlayer;
+      const isNew = Game._isNewPlayer;
+
+      if (!word) {
+        errorEl.textContent = 'Type a secret word!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+
+      if (isNew) {
+        // Setting secret word for first time
+        const { error } = await sb
+          .from('diq_players').update({ secret_word: word }).eq('id', player.id);
+
+        if (error) {
+          errorEl.textContent = 'Something went wrong. Try again!';
+          errorEl.classList.remove('hidden');
+          return;
+        }
+
+        loginPlayer(player);
+      } else {
+        // Verifying existing secret word
+        if (word !== player.secret_word.toLowerCase()) {
+          errorEl.textContent = "That's not the right word. Try again!";
+          errorEl.classList.remove('hidden');
+          return;
+        }
+
+        loginPlayer(player);
+      }
+    }
+
+    function loginPlayer(player) {
+      Game.session.playerId = player.id;
+      Game.session.playerName = player.name;
+      Game.session.teamId = player.team_id;
+
+      localStorage.setItem('diq_player', JSON.stringify({
+        playerId: player.id,
+        playerName: player.name,
+        teamId: Game.session.teamId,
+        teamName: Game.session.teamName || '',
+        teamCode: Game.session.teamCode || ''
+      }));
+
+      Game._pendingPlayer = null;
+      Game._isNewPlayer = false;
+      Game.transition('HOME');
+    }
+
+    function switchPlayer() {
+      // Clear player but keep team
+      Game.session.playerId = null;
+      Game.session.playerName = '';
+      localStorage.removeItem('diq_player');
+      Game.transition('HOME');
+    }
+
+    // ==========================================
+    // SOLO PRACTICE
+    // ==========================================
+
+    function startSoloPractice() {
+      Game.session.playerId = null;
+      Game.session.playerName = 'Solo Player';
+      Game.session.teamId = null;
+      Game.session.teamName = '';
+      Game.session.teamCode = '';
+      Game.session.isSolo = true;
+      Game.transition('POSITION_SELECT');
+    }
+
+    // ==========================================
+    // COACH: CREATE TEAM
+    // ==========================================
+
+    async function createTeam() {
+      const nameInput = document.getElementById('create-team-name');
+      const ageInput = document.getElementById('create-team-age');
+      const pinInput = document.getElementById('create-team-pin');
+      const errorEl = document.getElementById('create-team-error');
+
+      const name = nameInput.value.trim();
+      const age = ageInput.value.trim() || '7U';
+      const pin = pinInput.value.trim();
+
+      if (!name) {
+        errorEl.textContent = 'Enter a team name!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (!pin || pin.length !== 4 || !/^\d{4}$/.test(pin)) {
+        errorEl.textContent = 'PIN must be exactly 4 digits!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+
+      // Generate team code via the DB function
+      const { data: codeResult, error: codeErr } = await sb.rpc('generate_team_code');
+      if (codeErr || !codeResult) {
+        errorEl.textContent = 'Could not generate team code. Try again!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      const { data: team, error } = await sb
+        .from('diq_teams')
+        .insert({ name, age_group: age, coach_pin: pin, team_code: codeResult })
+        .select()
+        .single();
+
+      if (error) {
+        errorEl.textContent = 'Could not create team. Try again!';
+        errorEl.classList.remove('hidden');
+        console.error('Create team error:', error);
+        return;
+      }
+
+      Game.transition('COACH_MANAGE', { team });
+    }
+
+    // ==========================================
+    // COACH: LOGIN TO EXISTING TEAM
+    // ==========================================
+
+    async function coachLogin() {
+      const codeInput = document.getElementById('coach-team-code');
+      const pinInput = document.getElementById('coach-pin-input');
+      const errorEl = document.getElementById('coach-login-error');
+
+      const code = codeInput.value.trim().toUpperCase();
+      const pin = pinInput.value.trim();
+
+      if (!code || !pin) {
+        errorEl.textContent = 'Enter your team code and PIN!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+      const { data: team, error } = await sb
+        .from('diq_teams')
+        .select('*')
+        .eq('team_code', code)
+        .eq('coach_pin', pin)
+        .single();
+
+      if (error || !team) {
+        errorEl.textContent = 'Wrong team code or PIN!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+
+      Game.transition('COACH_MANAGE', { team });
+    }
+
+    // ==========================================
+    // COACH: MANAGE ROSTER
+    // ==========================================
+
+    async function addPlayerToTeam() {
+      const input = document.getElementById('add-player-name');
+      const errorEl = document.getElementById('add-player-error');
+      const name = input.value.trim();
+      const team = Game._coachTeam;
+
+      if (!name) {
+        errorEl.textContent = 'Enter a player name!';
+        errorEl.classList.remove('hidden');
+        return;
+      }
+      if (!team) return;
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+      const { error } = await sb
+        .from('diq_players')
+        .insert({ team_id: team.id, name, avatar_emoji: '⚾' });
+
+      if (error) {
+        if (error.code === '23505') {
+          errorEl.textContent = `"${name}" is already on the team! Add a last initial if needed.`;
+        } else {
+          errorEl.textContent = 'Could not add player. Try again!';
+        }
+        errorEl.classList.remove('hidden');
+        console.error('Add player error:', error);
+        return;
+      }
+
+      input.value = '';
+      await Game.refreshCoachRoster();
+    }
+
+    async function removePlayerFromTeam(playerId) {
+      const sb = getSupabase();
+      await sb.from('diq_players').update({ is_active: false }).eq('id', playerId);
+      await Game.refreshCoachRoster();
+    }
+
+    // ==========================================
+    // INSTRUCTIONS & LEADERBOARD
+    // ==========================================
+
     function showInstructions() {
       const section = document.getElementById('instructions-section');
       const leaderboard = document.getElementById('leaderboard-section');
-      leaderboard.classList.add('hidden');
+      if (leaderboard) leaderboard.classList.add('hidden');
       section.classList.toggle('hidden');
     }
 
@@ -343,16 +750,23 @@
 
       try {
         const sb = getSupabase();
-        const { data, error } = await sb
+        let query = sb
           .from('diq_games')
-          .select('player_id, total_points, speed_level, runs_allowed, diq_players(name)')
+          .select('player_id, total_points, speed_level, runs_allowed, diq_players(name, team_id)')
           .order('total_points', { ascending: false });
 
+        const { data, error } = await query;
         if (error) throw error;
+
+        // Filter to current team if logged in
+        const teamId = Game.session.teamId;
+        const filtered = teamId
+          ? (data || []).filter(row => row.diq_players?.team_id === teamId)
+          : (data || []);
 
         // Best score per player per speed level
         const bestScores = { rookie: {}, allstar: {} };
-        (data || []).forEach(row => {
+        filtered.forEach(row => {
           const level = row.speed_level || 'rookie';
           const pid = row.player_id;
           if (!bestScores[level]) bestScores[level] = {};
@@ -386,8 +800,22 @@
       }
     }
 
+    // ==========================================
+    // URL-BASED TEAM CODE
+    // ==========================================
+
+    function checkUrlTeamCode() {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('team');
+      if (code && !Game.session.playerId) {
+        document.getElementById('team-code-input').value = code.toUpperCase();
+        Game.transition('TEAM_CODE');
+      }
+    }
+
     // Initialize
     Game.init();
+    checkUrlTeamCode();
   </script>
 </body>
 </html>

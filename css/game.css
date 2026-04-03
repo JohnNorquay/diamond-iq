@@ -698,3 +698,99 @@
   color: var(--text-muted);
   margin-bottom: var(--space-sm);
 }
+
+/* ==========================================
+   MULTI-TEAM UI
+   ========================================== */
+
+.code-input {
+  width: 100%;
+  max-width: 300px;
+  padding: var(--space-md) var(--space-lg);
+  font-family: var(--font);
+  font-size: var(--font-size-xl);
+  font-weight: 800;
+  text-align: center;
+  letter-spacing: 4px;
+  background: var(--bg-card);
+  color: var(--text);
+  border: 2px solid rgba(255,255,255,0.15);
+  border-radius: var(--radius-md);
+  outline: none;
+  text-transform: uppercase;
+}
+
+.code-input:focus {
+  border-color: var(--team-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+}
+
+.code-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.5;
+  letter-spacing: 2px;
+  font-size: var(--font-size-lg);
+  text-transform: none;
+}
+
+.input-error {
+  color: var(--wrong);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-top: var(--space-sm);
+  text-align: center;
+}
+
+.input-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--text-muted);
+  margin-bottom: var(--space-xs);
+}
+
+.coach-section {
+  background: var(--bg-card);
+  padding: var(--space-lg);
+  border-radius: var(--radius-md);
+}
+
+.team-code-display {
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  letter-spacing: 6px;
+  color: var(--gold);
+  background: var(--bg-card);
+  padding: var(--space-sm) var(--space-xl);
+  border-radius: var(--radius-md);
+  border: 2px solid var(--gold);
+  margin-bottom: var(--space-sm);
+}
+
+.roster-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+}
+
+.roster-item .name {
+  font-weight: 700;
+}
+
+.roster-item .remove-btn {
+  background: none;
+  color: var(--wrong);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  min-width: auto;
+  min-height: auto;
+}
+
+.roster-item .remove-btn:hover {
+  background: rgba(239, 68, 68, 0.15);
+}

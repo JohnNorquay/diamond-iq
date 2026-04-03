@@ -42,6 +42,8 @@ const Game = {
         this.session.playerId = data.playerId;
         this.session.playerName = data.playerName;
         this.session.teamId = data.teamId;
+        this.session.teamName = data.teamName || '';
+        this.session.teamCode = data.teamCode || '';
       } catch (e) { /* ignore */ }
     }
     this.transition('HOME');
@@ -55,13 +57,21 @@ const Game = {
 
   render(state, data) {
     document.querySelectorAll('.screen, .game-container, .summary-container').forEach(el => el.classList.remove('active'));
+    // Hide leaderboard/instructions when switching screens
+    document.getElementById('leaderboard-section')?.classList.add('hidden');
+    document.getElementById('instructions-section')?.classList.add('hidden');
     const readyEl = document.getElementById('ready-overlay');
     if (readyEl) { readyEl.classList.remove('active'); readyEl.innerHTML = ''; }
     document.getElementById('feedback-overlay')?.classList.remove('active');
 
     switch (state) {
       case 'HOME': this.renderHome(); break;
+      case 'TEAM_CODE': this.renderTeamCode(); break;
       case 'PLAYER_SELECT': this.renderPlayerSelect(); break;
+      case 'SECRET_WORD': this.renderSecretWord(data); break;
+      case 'COACH_LOGIN': this.renderCoachLogin(); break;
+      case 'CREATE_TEAM': this.renderCreateTeam(); break;
+      case 'COACH_MANAGE': this.renderCoachManage(data); break;
       case 'POSITION_SELECT': this.renderPositionSelect(); break;
       case 'LOADING': this.renderLoading(); break;
       case 'READY': this.renderReady(data); break;
@@ -75,18 +85,100 @@ const Game = {
     const screen = document.getElementById('screen-home');
     screen.classList.add('active');
 
-    const nameEl = document.getElementById('home-player-name');
-    if (this.session.playerName) {
-      nameEl.textContent = `Welcome back, ${this.session.playerName}!`;
-      document.getElementById('btn-play').classList.remove('hidden');
-      document.getElementById('btn-select-player').classList.add('hidden');
-      document.getElementById('btn-switch-player').classList.remove('hidden');
+    const loggedIn = document.getElementById('home-logged-in');
+    const notLoggedIn = document.getElementById('home-not-logged-in');
+
+    if (this.session.playerId && this.session.playerName) {
+      loggedIn.classList.remove('hidden');
+      notLoggedIn.classList.add('hidden');
+      document.getElementById('home-player-name').textContent = `Welcome back, ${this.session.playerName}!`;
+      document.getElementById('home-team-name').textContent = this.session.teamName || '';
     } else {
-      nameEl.textContent = 'Welcome to Diamond IQ!';
-      document.getElementById('btn-play').classList.add('hidden');
-      document.getElementById('btn-select-player').classList.remove('hidden');
-      document.getElementById('btn-switch-player').classList.add('hidden');
+      loggedIn.classList.add('hidden');
+      notLoggedIn.classList.remove('hidden');
     }
+  },
+
+  renderTeamCode() {
+    document.getElementById('screen-team-code').classList.add('active');
+    document.getElementById('team-code-error').classList.add('hidden');
+    const input = document.getElementById('team-code-input');
+    input.value = '';
+    setTimeout(() => input.focus(), 100);
+  },
+
+  renderSecretWord(data) {
+    document.getElementById('screen-secret-word').classList.add('active');
+    document.getElementById('secret-word-error').classList.add('hidden');
+    const input = document.getElementById('secret-word-input');
+    input.value = '';
+
+    const player = data?.player;
+    const isNewPlayer = !player?.secret_word;
+
+    if (isNewPlayer) {
+      document.getElementById('secret-word-title').textContent = `Hey ${player?.name}!`;
+      document.getElementById('secret-word-desc').textContent =
+        "Pick a secret word so only you can use your name. It can be anything — your middle name, your pet's name, a favorite word!";
+      document.getElementById('btn-secret-word').textContent = "That's My Word!";
+    } else {
+      document.getElementById('secret-word-title').textContent = `Welcome back, ${player?.name}!`;
+      document.getElementById('secret-word-desc').textContent = "Enter your secret word to continue.";
+      document.getElementById('btn-secret-word').textContent = "Let's Go!";
+    }
+
+    this._pendingPlayer = player;
+    this._isNewPlayer = isNewPlayer;
+    setTimeout(() => input.focus(), 100);
+  },
+
+  renderCoachLogin() {
+    document.getElementById('screen-coach-login').classList.add('active');
+    document.getElementById('coach-login-error').classList.add('hidden');
+    document.getElementById('coach-team-code').value = '';
+    document.getElementById('coach-pin-input').value = '';
+  },
+
+  renderCreateTeam() {
+    document.getElementById('screen-create-team').classList.add('active');
+    document.getElementById('create-team-error').classList.add('hidden');
+    document.getElementById('create-team-name').value = '';
+    document.getElementById('create-team-pin').value = '';
+  },
+
+  async renderCoachManage(data) {
+    document.getElementById('screen-coach-manage').classList.add('active');
+    const team = data?.team;
+    if (!team) return;
+
+    this._coachTeam = team;
+    document.getElementById('coach-manage-title').textContent = team.name;
+    document.getElementById('coach-team-code-display').textContent = team.team_code;
+    document.getElementById('add-player-error').classList.add('hidden');
+
+    await this.refreshCoachRoster();
+  },
+
+  async refreshCoachRoster() {
+    const team = this._coachTeam;
+    if (!team) return;
+
+    const sb = getSupabase();
+    const { data: players } = await sb
+      .from('diq_players').select('*').eq('team_id', team.id).eq('is_active', true).order('name');
+
+    const roster = document.getElementById('coach-roster');
+    if (!players || players.length === 0) {
+      roster.innerHTML = '<div class="text-muted" style="padding: var(--space-sm);">No players yet. Add some!</div>';
+      return;
+    }
+
+    roster.innerHTML = players.map(p => `
+      <div class="roster-item">
+        <span class="name">${p.avatar_emoji || '⚾'} ${p.name}</span>
+        <button class="remove-btn" onclick="removePlayerFromTeam('${p.id}')">Remove</button>
+      </div>
+    `).join('');
   },
 
   async renderPlayerSelect() {
@@ -95,16 +187,19 @@ const Game = {
     const list = document.getElementById('player-list');
     list.innerHTML = '<div class="text-center text-muted">Loading players...</div>';
 
+    const teamId = this.session.teamId;
+    document.getElementById('player-select-team').textContent = this.session.teamName || '';
+
     const sb = getSupabase();
-    const { data: players, error } = await sb
-      .from('diq_players').select('*').eq('is_active', true).order('name');
+    let query = sb.from('diq_players').select('*').eq('is_active', true).order('name');
+    if (teamId) query = query.eq('team_id', teamId);
+
+    const { data: players, error } = await query;
 
     if (error || !players || players.length === 0) {
       list.innerHTML = '<div class="text-center text-muted">No players found. Ask your coach!</div>';
       return;
     }
-
-    if (players[0]?.team_id) this.session.teamId = players[0].team_id;
 
     list.innerHTML = '';
     players.forEach(p => {
@@ -117,11 +212,14 @@ const Game = {
           <div class="position">${POSITION_NAMES[p.primary_position] || 'All Positions'}</div>
         </div>`;
       card.addEventListener('click', () => {
-        this.session.playerId = p.id;
-        this.session.playerName = p.name;
-        this.session.teamId = p.team_id;
-        localStorage.setItem('diq_player', JSON.stringify({ playerId: p.id, playerName: p.name, teamId: p.team_id }));
-        this.transition('HOME');
+        // Check if this player has a secret word set
+        if (p.secret_word) {
+          // Existing player — verify secret word
+          this.transition('SECRET_WORD', { player: p });
+        } else {
+          // New player — set a secret word
+          this.transition('SECRET_WORD', { player: p });
+        }
       });
       list.appendChild(card);
     });

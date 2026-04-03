@@ -531,11 +531,21 @@ function animateThrow(fromPositionCode, toPositionCode) {
   // Remove old ball
   group.innerHTML = '';
 
-  const fromPos = DEFAULT_POSITIONS[fromPositionCode];
-  const toZone = ZONES[toPositionCode] || DEFAULT_POSITIONS[toPositionCode];
-  if (!fromPos || !toZone) return Promise.resolve();
+  // Use the ball's current position (where the fielder caught it) as the throw origin
+  const ballLayer = document.getElementById('ball-layer');
+  const existingBall = ballLayer?.querySelector('circle');
+  let from;
+  if (existingBall) {
+    from = { x: parseFloat(existingBall.getAttribute('cx')), y: parseFloat(existingBall.getAttribute('cy')) };
+  } else {
+    const fromPos = DEFAULT_POSITIONS[fromPositionCode];
+    if (!fromPos) return Promise.resolve();
+    from = toSVG(fromPos.x, fromPos.y);
+  }
 
-  const from = toSVG(fromPos.x, fromPos.y);
+  // Throw target is the BASE position (from ZONES), not the player's default fielding spot
+  const toZone = ZONES[toPositionCode] || DEFAULT_POSITIONS[toPositionCode];
+  if (!toZone) return Promise.resolve();
   const to = toSVG(toZone.x, toZone.y);
 
   // Apply position-based throw speed
