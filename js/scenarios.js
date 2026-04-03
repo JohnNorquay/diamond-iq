@@ -67,11 +67,123 @@ function pickScenarioForInning(scenarios, currentRunners, playerPosition, recent
 
   // Pick from top 3 with some randomness
   const topN = Math.min(matches.length, 3);
-  return matches[Math.floor(Math.random() * topN)];
+  const picked = matches[Math.floor(Math.random() * topN)];
+
+  // Apply dynamic cutoff positions based on game situation
+  if (picked) applyDynamicCutoffs(picked);
+
+  return picked;
 }
 
 function getPlayerAction(scenario, positionCode) {
   return scenario.actions?.find(a => a.position_code === positionCode) || null;
+}
+
+// ==========================================
+// DYNAMIC CUTOFF POSITIONING
+// ==========================================
+// Calculates the cutoff position as the midpoint between the outfielder
+// and the target base, based on the game situation (runners on base).
+
+const BASE_POSITIONS = {
+  '1B': { x: 72, y: 58 },
+  '2B': { x: 50, y: 38 },
+  '3B': { x: 28, y: 58 },
+  'home': { x: 50, y: 90 },
+};
+
+// Determine which base the cutoff is lining up toward
+function getCutoffTargetBase(scenario, action) {
+  const zone = action.target_zone || '';
+  const runners = scenario.runners_on || [];
+  const hitZone = scenario.ball_hit_zone;
+  const isLeftSide = ['LF', 'LCF'].includes(hitZone);
+  const isRightSide = ['RF', 'RCF'].includes(hitZone);
+
+  // Explicit zone names tell us the target
+  if (zone.includes('home')) return 'home';
+  if (zone.includes('3B') || zone.includes('to_3B')) return '3B';
+
+  // Context-based: left side cutoff (SS)
+  if (isLeftSide) {
+    if (runners.includes('2B') && !runners.includes('1B')) {
+      // Runner on 2nd only — cutoff to home (runner tags up to score)
+      return 'home';
+    }
+    if (runners.includes('2B') && runners.includes('1B')) {
+      // 1st and 2nd — cutoff between 2nd and 3rd (split the difference)
+      return '2B-3B';
+    }
+    // Default: cutoff toward 2nd base
+    return '2B';
+  }
+
+  // Context-based: right side cutoff (2B)
+  if (isRightSide) {
+    if (runners.includes('2B') && !runners.includes('1B')) {
+      // Runner on 2nd tagging — cutoff toward 3rd
+      return '3B';
+    }
+    if (runners.includes('2B') && runners.includes('1B')) {
+      // 1st and 2nd — cutoff between 2nd and 3rd
+      return '2B-3B';
+    }
+    // Default: cutoff toward 2nd base
+    return '2B';
+  }
+
+  return '2B'; // fallback
+}
+
+// Calculate midpoint between outfielder and target base
+function calculateCutoffPosition(outfielderPos, targetBase) {
+  let basePos;
+  if (targetBase === '2B-3B') {
+    // Split between 2nd and 3rd — average of those two bases
+    basePos = {
+      x: (BASE_POSITIONS['2B'].x + BASE_POSITIONS['3B'].x) / 2,
+      y: (BASE_POSITIONS['2B'].y + BASE_POSITIONS['3B'].y) / 2
+    };
+  } else {
+    basePos = BASE_POSITIONS[targetBase];
+  }
+
+  if (!basePos || !outfielderPos) return null;
+
+  return {
+    x: Math.round((outfielderPos.x + basePos.x) / 2),
+    y: Math.round((outfielderPos.y + basePos.y) / 2)
+  };
+}
+
+// Apply dynamic cutoff positions to all actions in a scenario
+function applyDynamicCutoffs(scenario) {
+  if (!scenario.actions) return;
+
+  const hitZone = scenario.ball_hit_zone;
+  const outfielderPos = DEFAULT_POSITIONS[hitZone];
+  if (!outfielderPos) return; // not an outfield hit
+
+  const outfieldPositions = ['LF', 'LCF', 'RCF', 'RF'];
+  if (!outfieldPositions.includes(hitZone)) return; // only for outfield hits
+
+  scenario.actions.forEach(action => {
+    if (!action.target_zone || !action.target_zone.startsWith('cutoff')) return;
+
+    const targetBase = getCutoffTargetBase(scenario, action);
+    const pos = calculateCutoffPosition(outfielderPos, targetBase);
+
+    if (pos) {
+      action.target_x = pos.x;
+      action.target_y = pos.y;
+
+      // Update label to reflect the target
+      const baseLabel = targetBase === '2B-3B' ? '2nd/3rd' :
+        targetBase === 'home' ? 'Home' :
+        targetBase === '3B' ? '3rd' : '2nd';
+      action.target_label = `Cutoff (→${baseLabel})`;
+    }
+  });
 }
 
 function evaluateMove(tapX, tapY, action) {
