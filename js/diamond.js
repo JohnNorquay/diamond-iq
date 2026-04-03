@@ -525,15 +525,22 @@ const THROW_SPEED_MULTIPLIER = {
   'RF': 0.85,   // RF usually has the strongest outfield arm
 };
 
+// Get where a player dot currently is on the field (after moveAIPlayers)
+function getPlayerCurrentPosition(positionCode) {
+  const dot = document.querySelector(`.player-dot[data-position="${positionCode}"]`);
+  if (!dot) return null;
+  const transform = dot.getAttribute('transform');
+  const match = transform?.match(/translate\(([\d.]+),\s*([\d.]+)\)/);
+  if (!match) return null;
+  return { x: parseFloat(match[1]), y: parseFloat(match[2]) };
+}
+
 // Animate throw from fielder to a base position
 function animateThrow(fromPositionCode, toPositionCode) {
   const group = document.getElementById('ball-layer');
-  // Remove old ball
-  group.innerHTML = '';
 
-  // Use the ball's current position (where the fielder caught it) as the throw origin
-  const ballLayer = document.getElementById('ball-layer');
-  const existingBall = ballLayer?.querySelector('circle');
+  // Grab ball position BEFORE clearing
+  const existingBall = group.querySelector('circle');
   let from;
   if (existingBall) {
     from = { x: parseFloat(existingBall.getAttribute('cx')), y: parseFloat(existingBall.getAttribute('cy')) };
@@ -543,10 +550,20 @@ function animateThrow(fromPositionCode, toPositionCode) {
     from = toSVG(fromPos.x, fromPos.y);
   }
 
-  // Throw target is the BASE position (from ZONES), not the player's default fielding spot
-  const toZone = ZONES[toPositionCode] || DEFAULT_POSITIONS[toPositionCode];
-  if (!toZone) return Promise.resolve();
-  const to = toSVG(toZone.x, toZone.y);
+  // Now clear
+  group.innerHTML = '';
+
+  // Throw target: use the player's CURRENT position on the field (where they moved to),
+  // not their default fielding spot. This handles SS covering 2B, etc.
+  const playerPos = getPlayerCurrentPosition(toPositionCode);
+  let to;
+  if (playerPos) {
+    to = playerPos; // Already in SVG coordinates
+  } else {
+    const toZone = ZONES[toPositionCode] || DEFAULT_POSITIONS[toPositionCode];
+    if (!toZone) return Promise.resolve();
+    to = toSVG(toZone.x, toZone.y);
+  }
 
   // Apply position-based throw speed
   const speedMult = THROW_SPEED_MULTIPLIER[fromPositionCode] || 1.0;
