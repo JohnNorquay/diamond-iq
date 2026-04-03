@@ -794,3 +794,191 @@
 .roster-item .remove-btn:hover {
   background: rgba(239, 68, 68, 0.15);
 }
+
+/* ==========================================
+   COACH DASHBOARD
+   ========================================== */
+
+.dash-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-sm);
+}
+
+.dash-stat-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  text-align: center;
+}
+
+.dash-stat-value {
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  color: var(--team-accent);
+}
+
+.dash-stat-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.dash-section-title {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  color: var(--gold);
+  margin-bottom: var(--space-sm);
+}
+
+/* Player row in dashboard */
+.dash-player-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-xs);
+  cursor: pointer;
+  transition: border-color 0.2s;
+  border: 2px solid transparent;
+}
+
+.dash-player-row:active {
+  transform: scale(0.98);
+}
+
+.dash-player-row .player-name {
+  flex: 1;
+  font-weight: 700;
+}
+
+.dash-player-row .player-games {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}
+
+.dash-player-row .player-accuracy {
+  font-weight: 800;
+  min-width: 48px;
+  text-align: right;
+}
+
+.accuracy-high { color: var(--correct); }
+.accuracy-mid { color: var(--streak); }
+.accuracy-low { color: var(--wrong); }
+
+.dash-no-data {
+  color: var(--text-muted);
+  font-size: var(--font-size-sm);
+  text-align: center;
+  padding: var(--space-md);
+}
+
+/* Position accuracy bars */
+.dash-pos-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: 6px;
+}
+
+.dash-pos-label {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  min-width: 32px;
+  color: var(--text-muted);
+}
+
+.dash-pos-bar-bg {
+  flex: 1;
+  height: 20px;
+  background: rgba(255,255,255,0.08);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.dash-pos-bar {
+  height: 100%;
+  border-radius: var(--radius-sm);
+  transition: width 0.5s ease;
+}
+
+.dash-pos-pct {
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  min-width: 40px;
+  text-align: right;
+}
+
+/* Player detail card */
+.dash-detail-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  border: 2px solid var(--team-accent);
+}
+
+.dash-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-md);
+}
+
+.dash-detail-name {
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+}
+
+.dash-detail-close {
+  background: none;
+  color: var(--text-muted);
+  font-size: var(--font-size-lg);
+  padding: var(--space-xs);
+  min-width: auto;
+  min-height: auto;
+}
+
+.dash-detail-stats {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.dash-mini-stat {
+  text-align: center;
+}
+
+.dash-mini-value {
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+  color: var(--team-accent);
+}
+
+.dash-mini-label {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.dash-strength {
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin-bottom: var(--space-xs);
+}
+
+.dash-strength.good {
+  background: rgba(34, 197, 94, 0.1);
+  color: var(--correct);
+  border-left: 3px solid var(--correct);
+}
+
+.dash-strength.needs-work {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--wrong);
+  border-left: 3px solid var(--wrong);
+}

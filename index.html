@@ -335,7 +335,29 @@
       <div id="add-player-error" class="input-error hidden"></div>
     </div>
 
+    <!-- Coach Dashboard -->
+    <div id="coach-dashboard" class="hidden" style="width: 100%; max-width: 440px; margin-top: var(--space-lg);">
+      <h3 style="font-size: var(--font-size-lg); font-weight: 800; color: var(--team-accent); margin-bottom: var(--space-md); text-align: center;">
+        Team Dashboard
+      </h3>
+
+      <!-- Team overview stats -->
+      <div id="dash-overview" class="dash-stats-row"></div>
+
+      <!-- Position accuracy heatmap -->
+      <div id="dash-positions" style="margin-top: var(--space-md);"></div>
+
+      <!-- Player list with stats -->
+      <div id="dash-players" style="margin-top: var(--space-md);"></div>
+
+      <!-- Expanded player detail -->
+      <div id="dash-player-detail" class="hidden" style="margin-top: var(--space-md);"></div>
+    </div>
+
     <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px; margin-top: var(--space-lg);">
+      <button id="btn-coach-dashboard" class="btn btn-primary" onclick="toggleCoachDashboard()">
+        Team Stats
+      </button>
       <button class="btn btn-secondary" onclick="Game.transition('HOME')">
         Done
       </button>
@@ -786,6 +808,242 @@
 
       valueEl.textContent = team.team_code;
       resultEl.classList.remove('hidden');
+    }
+
+    // ==========================================
+    // COACH DASHBOARD
+    // ==========================================
+
+    async function toggleCoachDashboard() {
+      const dash = document.getElementById('coach-dashboard');
+      if (!dash.classList.contains('hidden')) {
+        dash.classList.add('hidden');
+        return;
+      }
+      dash.classList.remove('hidden');
+      await loadCoachDashboard();
+    }
+
+    async function loadCoachDashboard() {
+      const team = Game._coachTeam;
+      if (!team) return;
+
+      const sb = getSupabase();
+
+      // Load all players for this team
+      const { data: players } = await sb
+        .from('diq_players').select('id, name').eq('team_id', team.id).eq('is_active', true).order('name');
+
+      if (!players || players.length === 0) {
+        document.getElementById('dash-overview').innerHTML = '<div class="dash-no-data">No players yet!</div>';
+        return;
+      }
+
+      const playerIds = players.map(p => p.id);
+
+      // Load all scores for team players
+      const { data: scores } = await sb
+        .from('diq_scores').select('player_id, position_played, is_correct, action_type, time_ms, created_at')
+        .in('player_id', playerIds)
+        .order('created_at', { ascending: false });
+
+      // Load completed games
+      const { data: games } = await sb
+        .from('diq_games').select('player_id, total_points, speed_level, correct_count, total_answered, runs_allowed, best_streak, completed_at')
+        .in('player_id', playerIds)
+        .order('completed_at', { ascending: false });
+
+      const allScores = scores || [];
+      const allGames = games || [];
+
+      // === OVERVIEW STATS ===
+      const activePlayers = new Set(allScores.map(s => s.player_id)).size;
+      const totalGames = allGames.length;
+      const teamAccuracy = allScores.length > 0
+        ? Math.round((allScores.filter(s => s.is_correct).length / allScores.length) * 100)
+        : 0;
+
+      document.getElementById('dash-overview').innerHTML = `
+        <div class="dash-stat-card">
+          <div class="dash-stat-value">${activePlayers}/${players.length}</div>
+          <div class="dash-stat-label">Players Active</div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-value">${totalGames}</div>
+          <div class="dash-stat-label">Games Played</div>
+        </div>
+        <div class="dash-stat-card">
+          <div class="dash-stat-value">${teamAccuracy}%</div>
+          <div class="dash-stat-label">Team Accuracy</div>
+        </div>
+      `;
+
+      // === POSITION ACCURACY HEATMAP ===
+      const posStats = {};
+      const allPositions = ['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF'];
+      allPositions.forEach(p => posStats[p] = { correct: 0, total: 0 });
+
+      allScores.forEach(s => {
+        const pos = s.position_played;
+        if (posStats[pos]) {
+          posStats[pos].total++;
+          if (s.is_correct) posStats[pos].correct++;
+        }
+      });
+
+      let posHTML = '<div class="dash-section-title">Team Accuracy by Position</div>';
+      allPositions.forEach(pos => {
+        const stat = posStats[pos];
+        const pct = stat.total > 0 ? Math.round((stat.correct / stat.total) * 100) : 0;
+        const color = stat.total === 0 ? 'var(--text-muted)' : pct >= 70 ? 'var(--correct)' : pct >= 45 ? 'var(--streak)' : 'var(--wrong)';
+        posHTML += `
+          <div class="dash-pos-row">
+            <span class="dash-pos-label">${pos}</span>
+            <div class="dash-pos-bar-bg">
+              <div class="dash-pos-bar" style="width: ${stat.total > 0 ? pct : 0}%; background: ${color};"></div>
+            </div>
+            <span class="dash-pos-pct" style="color: ${color};">${stat.total > 0 ? pct + '%' : '—'}</span>
+          </div>`;
+      });
+      document.getElementById('dash-positions').innerHTML = posHTML;
+
+      // === PLAYER LIST ===
+      // Build per-player stats
+      const playerStats = {};
+      players.forEach(p => {
+        playerStats[p.id] = { name: p.name, correct: 0, total: 0, games: 0, positions: {} };
+      });
+
+      allScores.forEach(s => {
+        const ps = playerStats[s.player_id];
+        if (!ps) return;
+        ps.total++;
+        if (s.is_correct) ps.correct++;
+        if (!ps.positions[s.position_played]) ps.positions[s.position_played] = { correct: 0, total: 0 };
+        ps.positions[s.position_played].total++;
+        if (s.is_correct) ps.positions[s.position_played].correct++;
+      });
+
+      allGames.forEach(g => {
+        const ps = playerStats[g.player_id];
+        if (ps) ps.games++;
+      });
+
+      // Store for detail view
+      window._dashPlayerStats = playerStats;
+      window._dashPlayers = players;
+
+      let playersHTML = '<div class="dash-section-title">Players</div>';
+      // Sort: most games first, then by accuracy
+      const sorted = players.slice().sort((a, b) => {
+        const sa = playerStats[a.id], sb = playerStats[b.id];
+        if (sb.games !== sa.games) return sb.games - sa.games;
+        const accA = sa.total > 0 ? sa.correct / sa.total : 0;
+        const accB = sb.total > 0 ? sb.correct / sb.total : 0;
+        return accB - accA;
+      });
+
+      sorted.forEach(p => {
+        const ps = playerStats[p.id];
+        const pct = ps.total > 0 ? Math.round((ps.correct / ps.total) * 100) : -1;
+        const accClass = pct < 0 ? '' : pct >= 70 ? 'accuracy-high' : pct >= 45 ? 'accuracy-mid' : 'accuracy-low';
+        const accText = pct < 0 ? '—' : pct + '%';
+        const gamesText = ps.games === 0 ? 'No games' : ps.games === 1 ? '1 game' : `${ps.games} games`;
+
+        playersHTML += `
+          <div class="dash-player-row" onclick="showPlayerDetail('${p.id}')">
+            <span class="player-name">${p.name}</span>
+            <span class="player-games">${gamesText}</span>
+            <span class="player-accuracy ${accClass}">${accText}</span>
+          </div>`;
+      });
+
+      document.getElementById('dash-players').innerHTML = playersHTML;
+      document.getElementById('dash-player-detail').classList.add('hidden');
+    }
+
+    function showPlayerDetail(playerId) {
+      const ps = window._dashPlayerStats?.[playerId];
+      if (!ps) return;
+
+      const detailEl = document.getElementById('dash-player-detail');
+      const pct = ps.total > 0 ? Math.round((ps.correct / ps.total) * 100) : 0;
+      const allPositions = ['P','C','1B','2B','3B','SS','LF','LCF','RCF','RF'];
+
+      // Find best and worst positions (minimum 3 plays)
+      const posEntries = Object.entries(ps.positions)
+        .filter(([_, v]) => v.total >= 3)
+        .map(([pos, v]) => ({ pos, pct: Math.round((v.correct / v.total) * 100), total: v.total }));
+
+      posEntries.sort((a, b) => b.pct - a.pct);
+      const best = posEntries.slice(0, 2).filter(p => p.pct >= 50);
+      const worst = posEntries.slice(-2).filter(p => p.pct < 70).reverse();
+
+      let strengthsHTML = '';
+      if (best.length > 0) {
+        strengthsHTML += best.map(p =>
+          `<div class="dash-strength good">Strong at ${POSITION_NAMES[p.pos]} — ${p.pct}% (${p.total} plays)</div>`
+        ).join('');
+      }
+      if (worst.length > 0) {
+        strengthsHTML += worst.map(p =>
+          `<div class="dash-strength needs-work">Needs work: ${POSITION_NAMES[p.pos]} — ${p.pct}% (${p.total} plays)</div>`
+        ).join('');
+      }
+      if (!strengthsHTML) {
+        strengthsHTML = '<div class="dash-no-data">Need more plays to identify strengths</div>';
+      }
+
+      // Per-position bars for this player
+      let posHTML = '';
+      allPositions.forEach(pos => {
+        const v = ps.positions[pos];
+        const posPct = v ? Math.round((v.correct / v.total) * 100) : 0;
+        const count = v ? v.total : 0;
+        const color = count === 0 ? 'var(--text-muted)' : posPct >= 70 ? 'var(--correct)' : posPct >= 45 ? 'var(--streak)' : 'var(--wrong)';
+        posHTML += `
+          <div class="dash-pos-row">
+            <span class="dash-pos-label">${pos}</span>
+            <div class="dash-pos-bar-bg">
+              <div class="dash-pos-bar" style="width: ${count > 0 ? posPct : 0}%; background: ${color};"></div>
+            </div>
+            <span class="dash-pos-pct" style="color: ${color};">${count > 0 ? posPct + '%' : '—'}</span>
+          </div>`;
+      });
+
+      detailEl.innerHTML = `
+        <div class="dash-detail-card">
+          <div class="dash-detail-header">
+            <span class="dash-detail-name">${ps.name}</span>
+            <button class="dash-detail-close" onclick="document.getElementById('dash-player-detail').classList.add('hidden')">Close</button>
+          </div>
+          <div class="dash-detail-stats">
+            <div class="dash-mini-stat">
+              <div class="dash-mini-value">${pct}%</div>
+              <div class="dash-mini-label">Overall Accuracy</div>
+            </div>
+            <div class="dash-mini-stat">
+              <div class="dash-mini-value">${ps.games}</div>
+              <div class="dash-mini-label">Games Completed</div>
+            </div>
+            <div class="dash-mini-stat">
+              <div class="dash-mini-value">${ps.total}</div>
+              <div class="dash-mini-label">Total Plays</div>
+            </div>
+            <div class="dash-mini-stat">
+              <div class="dash-mini-value">${ps.correct}</div>
+              <div class="dash-mini-label">Correct</div>
+            </div>
+          </div>
+          ${strengthsHTML}
+          <div style="margin-top: var(--space-md);">
+            <div class="dash-section-title">Accuracy by Position</div>
+            ${posHTML}
+          </div>
+        </div>
+      `;
+      detailEl.classList.remove('hidden');
+      detailEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
 
     // ==========================================
