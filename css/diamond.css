@@ -1,0 +1,182 @@
+/* Baseball Diamond SVG Styles */
+.diamond-wrapper {
+  position: relative;
+  width: 100%;
+  max-width: 500px;
+}
+
+.diamond-container {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.quit-btn {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  background: rgba(15, 23, 42, 0.7);
+  color: var(--text-muted);
+  border: 1px solid var(--text-muted);
+  border-radius: var(--radius-sm);
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.quit-btn:active {
+  transform: scale(0.95);
+}
+
+.diamond-field {
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Player dots */
+.player-dot {
+  cursor: pointer;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.player-dot circle {
+  transition: r 0.3s, fill 0.3s, stroke 0.3s;
+}
+
+.player-dot text {
+  font-family: var(--font);
+  font-weight: 800;
+  pointer-events: none;
+  user-select: none;
+}
+
+.player-dot.is-you circle {
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.8));
+}
+
+.player-dot.is-you {
+  animation: pulse-glow 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-glow {
+  0%, 100% { filter: drop-shadow(0 0 6px rgba(59, 130, 246, 0.6)); }
+  50% { filter: drop-shadow(0 0 16px rgba(59, 130, 246, 1)); }
+}
+
+.player-dot.throwable {
+  cursor: pointer;
+  animation: throw-target 1s ease-in-out infinite;
+}
+
+@keyframes throw-target {
+  0%, 100% { filter: drop-shadow(0 0 4px rgba(251, 191, 36, 0.6)); }
+  50% { filter: drop-shadow(0 0 12px rgba(251, 191, 36, 1)); }
+}
+
+/* Runner dots */
+.runner-dot {
+  fill: #ef4444;
+  stroke: #ffffff;
+  stroke-width: 1.5;
+}
+
+/* Ball animation */
+.ball {
+  transition: all 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Zone highlights */
+.zone-highlight {
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.zone-highlight.visible {
+  opacity: 0.4;
+  animation: zone-pulse 2s ease-in-out infinite;
+}
+
+@keyframes zone-pulse {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 0.5; }
+}
+
+/* Correct/wrong position markers */
+.correct-marker {
+  animation: pop-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes pop-in {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* Arrow showing correct position */
+.correction-arrow {
+  stroke: var(--correct);
+  stroke-width: 2;
+  stroke-dasharray: 6 3;
+  fill: none;
+  animation: dash 1s linear infinite;
+}
+
+@keyframes dash {
+  to { stroke-dashoffset: -18; }
+}
+
+/* Target zone markers */
+.target-zone-marker {
+  cursor: pointer;
+  animation: zone-marker-appear 0.3s ease-out;
+}
+
+.target-zone-marker.cutoff-target:hover circle,
+.target-zone-marker.cutoff-target:active circle {
+  fill: rgba(251, 191, 36, 0.35);
+}
+
+.target-zone-marker.base-target:hover circle,
+.target-zone-marker.base-target:active circle {
+  fill: rgba(59, 130, 246, 0.4);
+}
+
+@keyframes zone-marker-appear {
+  0% { opacity: 0; transform: scale(0.5); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Base glow pulse */
+.base-glow {
+  animation: base-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes base-pulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+/* Batter runner dot */
+.batter-dot {
+  fill: #f59e0b !important;
+  stroke: #ffffff !important;
+  stroke-width: 1.5 !important;
+}
+
+/* Tap ripple effect */
+.tap-ripple {
+  fill: rgba(255, 255, 255, 0.3);
+  animation: ripple-out 0.6s ease-out forwards;
+}
+
+@keyframes ripple-out {
+  0% { r: 5; opacity: 0.6; }
+  100% { r: 25; opacity: 0; }
+}

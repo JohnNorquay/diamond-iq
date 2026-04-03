@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Diamond IQ - Baseball Positioning Game</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚾</text></svg>">
+  <link rel="stylesheet" href="/css/variables.css">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/game.css">
+  <link rel="stylesheet" href="/css/diamond.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <!-- HOME SCREEN -->
+  <div id="screen-home" class="screen active">
+    <div style="text-align: center; margin-bottom: var(--space-xl);">
+      <div style="font-size: 64px; margin-bottom: var(--space-md);">⚾</div>
+      <h1 style="font-size: var(--font-size-hero); font-weight: 900; color: var(--team-accent); line-height: 1.1;">
+        Diamond IQ
+      </h1>
+      <p style="font-size: var(--font-size-md); color: var(--text-muted); margin-top: var(--space-sm);">
+        Know Your Position. Make the Play.
+      </p>
+    </div>
+
+    <div id="home-player-name" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
+      Welcome to Diamond IQ!
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: var(--space-md); width: 100%; max-width: 300px;">
+      <button id="btn-play" class="btn btn-primary btn-large hidden" onclick="Game.transition('POSITION_SELECT')">
+        PLAY BALL!
+      </button>
+
+      <button id="btn-select-player" class="btn btn-primary btn-large" onclick="Game.transition('PLAYER_SELECT')">
+        Pick Your Name
+      </button>
+
+      <button id="btn-switch-player" class="btn btn-secondary hidden" onclick="Game.transition('PLAYER_SELECT')">
+        Switch Player
+      </button>
+
+      <button id="btn-leaderboard" class="btn btn-secondary" onclick="showLeaderboard()">
+        Leaderboard
+      </button>
+
+      <button class="btn btn-secondary" onclick="showInstructions()">
+        How to Play
+      </button>
+    </div>
+
+    <!-- Leaderboard section (hidden by default) -->
+    <div id="leaderboard-section" class="hidden" style="width: 100%; max-width: 400px; margin-top: var(--space-lg);">
+      <h2 style="font-size: var(--font-size-xl); font-weight: 800; text-align: center; margin-bottom: var(--space-md);">
+        Top Players
+      </h2>
+      <div id="leaderboard-list"></div>
+    </div>
+
+    <!-- Instructions section (hidden by default) -->
+    <div id="instructions-section" class="hidden" style="width: 100%; max-width: 440px; margin-top: var(--space-lg);">
+      <div class="instructions-card">
+        <h2 class="instructions-title">How to Play Diamond IQ</h2>
+
+        <div class="instructions-step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <strong>Pick your name</strong> from the roster, then tap <strong>PLAY BALL!</strong>
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <strong>Choose a position</strong> to practice, or pick <strong>All Positions</strong> to play every spot.
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <strong>Read the situation</strong> — check who's on base and how many outs there are. When you're ready, tap <strong>PITCH!</strong>
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <strong>Watch the ball</strong> get hit to a fielder. Runners will start running!
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <strong>Tap where you should go!</strong> Look for the gold <span style="color: #fbbf24; font-weight: 900;">X</span> marks (cutoff and backup spots) and the blue glowing bases. Tap the right one before time runs out.
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">6</div>
+          <div class="step-content">
+            If the ball is hit to <strong>you</strong>, tap the player you should <strong>throw to</strong>. The other players will glow to show they're ready.
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-number">7</div>
+          <div class="step-content">
+            <strong>Watch the play finish!</strong> See if the throw beats the runner. You'll get points for being in the right spot.
+          </div>
+        </div>
+
+        <div class="instructions-section-header">The Game</div>
+
+        <div class="instructions-step">
+          <div class="step-icon">⚾</div>
+          <div class="step-content">
+            Each game is <strong>9 innings</strong>. You play a <strong>different position every inning</strong>.
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-icon">3</div>
+          <div class="step-content">
+            Get <strong>3 outs</strong> to end the inning. Infield plays can get outs — outfield hits are base hits.
+          </div>
+        </div>
+
+        <div class="instructions-step">
+          <div class="step-icon">🏆</div>
+          <div class="step-content">
+            Your <strong>total score</strong> from all 9 innings goes on the leaderboard. Be fast and accurate to score big!
+          </div>
+        </div>
+
+        <div class="instructions-section-header">Scoring</div>
+
+        <div class="instructions-detail">
+          <strong>100 pts</strong> for correct positioning<br>
+          <strong>Speed bonus</strong> — answer fast for up to 50 extra points<br>
+          <strong>Streak bonus</strong> — get multiple right in a row for a multiplier<br>
+        </div>
+
+        <div class="instructions-section-header">Tips</div>
+
+        <div class="instructions-detail">
+          <strong>Cutoff</strong> = line up between the outfielder and the base<br>
+          <strong>Back up</strong> = get behind the base where the throw is going<br>
+          <strong>Cover</strong> = get on the bag and be ready for the ball<br>
+          After every play, read the explanation — it tells you <em>why</em> you go there!
+        </div>
+
+        <button class="btn btn-secondary" style="margin-top: var(--space-md); width: 100%;" onclick="hideInstructions()">
+          Got It!
+        </button>
+      </div>
+    </div>
+
+    <div style="margin-top: var(--space-2xl); color: var(--text-muted); font-size: var(--font-size-sm); text-align: center;">
+      Janesville Jays 7U
+    </div>
+  </div>
+
+  <!-- PLAYER SELECT SCREEN -->
+  <div id="screen-player-select" class="screen">
+    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-lg);">
+      Who Are You?
+    </h2>
+    <div id="player-list" style="display: flex; flex-direction: column; gap: var(--space-sm); width: 100%; max-width: 400px; overflow-y: auto; max-height: 70vh;">
+    </div>
+    <button class="btn btn-secondary" style="margin-top: var(--space-lg);" onclick="Game.transition('HOME')">
+      Back
+    </button>
+  </div>
+
+  <!-- POSITION SELECT SCREEN -->
+  <div id="screen-position-select" class="screen">
+    <h2 style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-sm);">
+      Pick Your Position
+    </h2>
+    <p class="text-muted" style="margin-bottom: var(--space-md);">What position do you want to practice?</p>
+
+    <div class="position-grid">
+      <button class="position-btn all-positions" onclick="Game.selectPosition('ALL')">
+        All Positions
+      </button>
+      <button class="position-btn" onclick="Game.selectPosition('P')" title="Back up wherever the throw goes. Field comebackers.">P<br><small>Pitcher</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('C')" title="Guard home plate. Catch throws home. Field short balls.">C<br><small>Catcher</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('1B')" title="Cover 1st base. Catch throws from infielders for outs.">1B<br><small>First Base</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('2B')" title="Cover 2nd base. Cutoff man from right side. Turn force plays.">2B<br><small>Second Base</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('3B')" title="Cover 3rd base. Field balls on the left side. Strong arm to 1st.">3B<br><small>Third Base</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('SS')" title="Cover 2nd/SS area. Cutoff man from left side. Fastest arm in the infield.">SS<br><small>Shortstop</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('LF')" title="Field balls hit to left. Throw to cutoff. Back up 3rd base.">LF<br><small>Left Field</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('LCF')" title="Field balls to left-center. Back up SS and 2nd base area.">LCF<br><small>Left-Center</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('RCF')" title="Field balls to right-center. Back up 2nd base and 1st base area.">RCF<br><small>Right-Center</small></button>
+      <button class="position-btn" onclick="Game.selectPosition('RF')" title="Field balls hit to right. Throw to cutoff. Back up 1st base.">RF<br><small>Right Field</small></button>
+    </div>
+
+    <!-- Speed Level -->
+    <div style="margin-top: var(--space-lg); width: 100%;">
+      <p class="text-muted text-center" style="margin-bottom: var(--space-sm); font-size: var(--font-size-sm);">Game Speed</p>
+      <div class="speed-toggle">
+        <button id="speed-rookie" class="speed-btn active" onclick="selectSpeed('rookie')">
+          🌟 Rookie<br><small>Learn the plays</small>
+        </button>
+        <button id="speed-allstar" class="speed-btn" onclick="selectSpeed('allstar')">
+          ⚡ All-Star<br><small>Game speed</small>
+        </button>
+      </div>
+    </div>
+
+    <button class="btn btn-secondary" style="margin-top: var(--space-lg);" onclick="Game.transition('HOME')">
+      Back
+    </button>
+  </div>
+
+  <!-- LOADING SCREEN -->
+  <div id="screen-loading" class="screen">
+    <div style="font-size: 48px; animation: pulse-glow 1s ease-in-out infinite;">⚾</div>
+    <p style="font-size: var(--font-size-lg); margin-top: var(--space-md);">Getting ready...</p>
+  </div>
+
+  <!-- GAME SCREEN -->
+  <div id="game-screen" class="game-container">
+    <!-- HUD -->
+    <div class="game-hud">
+      <div>
+        <div class="hud-score" id="hud-score">0</div>
+        <div class="hud-round" id="hud-round">0 Outs</div>
+      </div>
+      <div id="you-are" class="you-are">YOU ARE: SS</div>
+      <div class="hud-streak" id="hud-streak"></div>
+    </div>
+
+    <!-- Ready card (sits between HUD and field, not an overlay) -->
+    <div id="ready-overlay" class="ready-inline">
+      <!-- Content built dynamically by state.js renderReady() -->
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-bar-container" id="timer-bar-container">
+      <div class="timer-bar" id="timer-bar"></div>
+    </div>
+
+    <!-- Scenario Banner -->
+    <div class="scenario-banner" id="scenario-banner">
+      <div class="scenario-title" id="scenario-title">Ball hit to Shortstop</div>
+      <div class="scenario-instruction" id="scenario-instruction">Where should you go? Tap the field!</div>
+      <div class="scenario-runners" id="scenario-runners">Nobody on base</div>
+    </div>
+
+    <!-- Diamond -->
+    <div class="diamond-wrapper">
+      <div class="diamond-container" id="diamond-container"></div>
+      <button class="quit-btn" onclick="Game.goHome()">Quit</button>
+    </div>
+  </div>
+
+  <!-- FEEDBACK OVERLAY -->
+  <div id="feedback-overlay" class="feedback-overlay">
+    <div class="feedback-icon" id="feedback-icon">✅</div>
+    <div class="feedback-text correct" id="feedback-text">Nailed it!</div>
+    <div class="feedback-explanation" id="feedback-explanation"></div>
+    <div class="feedback-points" id="feedback-points">+150</div>
+    <div class="feedback-outcome" id="feedback-outcome"></div>
+    <div class="feedback-text" id="feedback-streak" style="font-size: var(--font-size-lg); color: var(--streak);"></div>
+    <button id="btn-next" class="btn btn-primary feedback-next">Next Play</button>
+  </div>
+
+  <!-- READY OVERLAY - positioned above field, not covering it -->
+
+  <!-- SUMMARY SCREEN -->
+  <div id="summary-screen" class="summary-container">
+    <h2 id="summary-header" style="font-size: var(--font-size-xl); font-weight: 800; margin-bottom: var(--space-xs);">Inning Complete!</h2>
+    <div class="summary-stars" id="summary-stars">⭐⭐⭐</div>
+    <div class="summary-score" id="summary-score">0</div>
+    <div class="summary-detail" id="summary-correct">0 / 0 correct</div>
+    <div class="summary-detail" id="summary-streak">Best streak: 0</div>
+    <div id="summary-inning-stats"></div>
+    <div id="summary-buttons" style="display: flex; gap: var(--space-md); margin-top: var(--space-md);"></div>
+  </div>
+
+  <!-- Confetti Canvas -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Scripts -->
+  <script src="/js/supabase.js"></script>
+  <script src="/js/diamond.js"></script>
+  <script src="/js/scoring.js"></script>
+  <script src="/js/scenarios.js"></script>
+  <script src="/js/audio.js"></script>
+  <script src="/js/animations.js"></script>
+  <script src="/js/state.js"></script>
+  <script>
+    // Speed level toggle
+    function selectSpeed(level) {
+      setSpeedLevel(level);
+      document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`speed-${level}`).classList.add('active');
+      localStorage.setItem('diq_speed', level);
+    }
+    // Restore saved speed
+    const savedSpeed = localStorage.getItem('diq_speed') || 'rookie';
+    selectSpeed(savedSpeed);
+
+    // Handle "All Positions" — pick random position for entire inning
+    const origSelectPosition = Game.selectPosition.bind(Game);
+    Game.selectPosition = function(position) {
+      if (position === 'ALL') {
+        const positions = Object.keys(DEFAULT_POSITIONS);
+        position = positions[Math.floor(Math.random() * positions.length)];
+      }
+      origSelectPosition(position);
+    };
+
+    // Leaderboard
+    function showInstructions() {
+      const section = document.getElementById('instructions-section');
+      const leaderboard = document.getElementById('leaderboard-section');
+      leaderboard.classList.add('hidden');
+      section.classList.toggle('hidden');
+    }
+
+    function hideInstructions() {
+      document.getElementById('instructions-section').classList.add('hidden');
+    }
+
+    async function showLeaderboard() {
+      document.getElementById('instructions-section').classList.add('hidden');
+      const section = document.getElementById('leaderboard-section');
+      const list = document.getElementById('leaderboard-list');
+
+      if (!section.classList.contains('hidden')) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      section.classList.remove('hidden');
+      list.innerHTML = '<div class="text-center text-muted">Loading...</div>';
+
+      try {
+        const sb = getSupabase();
+        const { data, error } = await sb
+          .from('diq_games')
+          .select('player_id, total_points, speed_level, runs_allowed, diq_players(name)')
+          .order('total_points', { ascending: false });
+
+        if (error) throw error;
+
+        // Best score per player per speed level
+        const bestScores = { rookie: {}, allstar: {} };
+        (data || []).forEach(row => {
+          const level = row.speed_level || 'rookie';
+          const pid = row.player_id;
+          if (!bestScores[level]) bestScores[level] = {};
+          if (!bestScores[level][pid] || row.total_points > bestScores[level][pid].totalPoints) {
+            bestScores[level][pid] = {
+              name: row.diq_players?.name || 'Unknown',
+              totalPoints: row.total_points,
+              runsAllowed: row.runs_allowed
+            };
+          }
+        });
+
+        function renderBoard(scores, label) {
+          const sorted = Object.values(scores).sort((a, b) => b.totalPoints - a.totalPoints);
+          if (sorted.length === 0) return `<div class="lb-section-header">${label}</div><div class="text-center text-muted" style="margin-bottom: var(--space-md);">No completed games yet!</div>`;
+
+          return `<div class="lb-section-header">${label}</div>` +
+            sorted.slice(0, 10).map((p, i) => `
+              <div class="leaderboard-row">
+                <div class="leaderboard-rank">${i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i + 1}`}</div>
+                <div class="leaderboard-name">${p.name}</div>
+                <div class="leaderboard-points">${p.totalPoints.toLocaleString()} pts</div>
+              </div>
+            `).join('');
+        }
+
+        list.innerHTML = renderBoard(bestScores.rookie, '🌟 Rookie') + renderBoard(bestScores.allstar, '⚡ All-Star');
+      } catch (e) {
+        list.innerHTML = '<div class="text-center text-muted">Could not load leaderboard</div>';
+        console.error('Leaderboard error:', e);
+      }
+    }
+
+    // Initialize
+    Game.init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,48 @@
+:root {
+  /* Janesville Jays - Blue & White */
+  --team-primary: #1e40af;
+  --team-secondary: #ffffff;
+  --team-accent: #3b82f6;
+  --team-light: #dbeafe;
+
+  /* Field colors */
+  --field-grass: #22c55e;
+  --field-grass-dark: #16a34a;
+  --field-dirt: #a16207;
+  --field-dirt-light: #ca8a04;
+  --field-base: #ffffff;
+  --field-line: #ffffff;
+
+  /* UI colors */
+  --bg: #0f172a;
+  --bg-card: #1e293b;
+  --text: #f8fafc;
+  --text-muted: #94a3b8;
+  --correct: #22c55e;
+  --wrong: #ef4444;
+  --streak: #f59e0b;
+  --gold: #fbbf24;
+
+  /* Spacing */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 24px;
+  --space-xl: 32px;
+  --space-2xl: 48px;
+
+  /* Typography */
+  --font: 'Nunito', system-ui, -apple-system, sans-serif;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 28px;
+  --font-size-2xl: 36px;
+  --font-size-hero: 48px;
+
+  /* Border radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-full: 9999px;
+}

@@ -1,0 +1,141 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100dvh;
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+button {
+  font-family: var(--font);
+  cursor: pointer;
+  border: none;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+a {
+  color: var(--team-accent);
+  text-decoration: none;
+}
+
+/* Prevent zoom on double-tap for mobile */
+* {
+  touch-action: manipulation;
+}
+
+/* Utility classes */
+.hidden { display: none !important; }
+.text-center { text-align: center; }
+.text-muted { color: var(--text-muted); }
+
+/* Screen container */
+.screen {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: var(--space-md);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.screen.active {
+  display: flex;
+}
+
+/* Big fun button */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md) var(--space-xl);
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  transition: transform 0.15s, box-shadow 0.15s;
+  min-height: 56px;
+  min-width: 140px;
+}
+
+.btn:active {
+  transform: scale(0.95);
+}
+
+.btn-primary {
+  background: var(--team-primary);
+  color: var(--team-secondary);
+  box-shadow: 0 4px 12px rgba(30, 64, 175, 0.4);
+}
+
+.btn-primary:active {
+  box-shadow: 0 2px 6px rgba(30, 64, 175, 0.3);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text);
+  border: 2px solid var(--team-accent);
+}
+
+.btn-large {
+  font-size: var(--font-size-xl);
+  padding: var(--space-lg) var(--space-2xl);
+  min-height: 72px;
+  border-radius: var(--radius-lg);
+}
+
+/* Player card (for roster selection) */
+.player-card {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md) var(--space-lg);
+  background: var(--bg-card);
+  border-radius: var(--radius-md);
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.15s;
+  cursor: pointer;
+  width: 100%;
+  min-height: 60px;
+}
+
+.player-card:active {
+  transform: scale(0.97);
+}
+
+.player-card.selected {
+  border-color: var(--team-accent);
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.player-card .emoji {
+  font-size: var(--font-size-xl);
+}
+
+.player-card .name {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+.player-card .position {
+  font-size: var(--font-size-sm);
+  color: var(--text-muted);
+}

@@ -1,0 +1,9 @@
+{
+  "outputDirectory": ".",
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/game", "destination": "/game.html" },
+    { "source": "/coach", "destination": "/coach.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
