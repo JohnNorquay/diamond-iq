@@ -246,6 +246,26 @@
         <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-sm);" onclick="coachLogin()">
           Sign In
         </button>
+        <button class="btn btn-secondary" style="width: 100%; margin-top: var(--space-sm); font-size: var(--font-size-sm);" onclick="showForgotCode()">
+          Forgot Your Team Code?
+        </button>
+      </div>
+
+      <!-- Forgot team code recovery -->
+      <div id="forgot-code-section" class="coach-section hidden" style="margin-top: var(--space-md);">
+        <h3 style="font-size: var(--font-size-md); font-weight: 700; margin-bottom: var(--space-sm);">Find Your Team Code</h3>
+        <input type="text" id="forgot-team-name" class="code-input" maxlength="40" placeholder="Team Name"
+          autocomplete="off" spellcheck="false" style="text-transform: none; letter-spacing: normal; font-size: var(--font-size-lg);">
+        <input type="text" id="forgot-pin" class="code-input" maxlength="4" placeholder="Coach PIN"
+          autocomplete="off" inputmode="numeric" style="margin-top: var(--space-sm);">
+        <div id="forgot-code-error" class="input-error hidden"></div>
+        <div id="forgot-code-result" class="hidden" style="margin-top: var(--space-sm); text-align: center;">
+          <div style="color: var(--text-muted); font-size: var(--font-size-sm);">Your team code is:</div>
+          <div id="forgot-code-value" style="font-size: var(--font-size-2xl); font-weight: 900; letter-spacing: 4px; color: var(--gold); margin-top: var(--space-xs);"></div>
+        </div>
+        <button class="btn btn-primary" style="width: 100%; margin-top: var(--space-sm);" onclick="lookupTeamCode()">
+          Look Up Code
+        </button>
       </div>
 
       <div style="text-align: center; color: var(--text-muted); font-weight: 700;">or</div>
@@ -718,6 +738,54 @@
       const sb = getSupabase();
       await sb.from('diq_players').update({ is_active: false }).eq('id', playerId);
       await Game.refreshCoachRoster();
+    }
+
+    // ==========================================
+    // COACH: FORGOT TEAM CODE
+    // ==========================================
+
+    function showForgotCode() {
+      const section = document.getElementById('forgot-code-section');
+      section.classList.toggle('hidden');
+      document.getElementById('forgot-code-error').classList.add('hidden');
+      document.getElementById('forgot-code-result').classList.add('hidden');
+    }
+
+    async function lookupTeamCode() {
+      const nameInput = document.getElementById('forgot-team-name');
+      const pinInput = document.getElementById('forgot-pin');
+      const errorEl = document.getElementById('forgot-code-error');
+      const resultEl = document.getElementById('forgot-code-result');
+      const valueEl = document.getElementById('forgot-code-value');
+
+      const name = nameInput.value.trim();
+      const pin = pinInput.value.trim();
+
+      if (!name || !pin) {
+        errorEl.textContent = 'Enter your team name and PIN!';
+        errorEl.classList.remove('hidden');
+        resultEl.classList.add('hidden');
+        return;
+      }
+
+      errorEl.classList.add('hidden');
+      const sb = getSupabase();
+      const { data: team, error } = await sb
+        .from('diq_teams')
+        .select('team_code')
+        .ilike('name', name)
+        .eq('coach_pin', pin)
+        .single();
+
+      if (error || !team) {
+        errorEl.textContent = "Can't find a team with that name and PIN.";
+        errorEl.classList.remove('hidden');
+        resultEl.classList.add('hidden');
+        return;
+      }
+
+      valueEl.textContent = team.team_code;
+      resultEl.classList.remove('hidden');
     }
 
     // ==========================================
